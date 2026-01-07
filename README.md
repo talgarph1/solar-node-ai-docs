@@ -109,8 +109,7 @@
 - **LTDC Dual-Layer Display:**
   - Background layer: Live camera feed
   - Foreground layer: Bounding boxes and labels (semi-transparent)
-- **USB UVC Support:** Stream output to PC via USB Video Class
-- **SPI Display Support:** X-NUCLEO-GFX01M2 SPI display module
+- **Onboard LCD:** Integrated high-resolution display on STM32N6570-DK
 - **Flexible Aspect Ratios:** Crop, fit, or stretch modes
 
 ### 🔧 Development & Deployment
@@ -146,13 +145,11 @@
 └─────────────────────┘         │ • External Flash     │
                                 └──────────┬───────────┘
                                            │
-                    ┌──────────────────────┼──────────────────────┐
-                    │                      │                      │
-                    ▼                      ▼                      ▼
-         ┌──────────────────┐   ┌──────────────────┐   ┌─────────────────┐
-         │ LCD Display      │   │ USB UVC Host     │   │ SPI Display     │
-         │ (STM32N6570-DK)  │   │ (NUCLEO board)   │   │ (NUCLEO board)  │
-         └──────────────────┘   └──────────────────┘   └─────────────────┘
+                                           ▼
+                                ┌──────────────────┐
+                                │ Onboard LCD      │
+                                │ (STM32N6570-DK)  │
+                                └──────────────────┘
 ```
 
 **Data Flow:**
@@ -163,13 +160,13 @@
 3. **NPU Inference:** Quantized model processes frame → Detections
 4. **Post-Processing:** Parse network output → Bounding boxes + labels
 5. **Visualization:** Draw overlays on foreground LTDC layer
-6. **Output:** Composite display or USB UVC stream
+6. **Output:** Composite display on onboard LCD
 
 ---
 
 ## 🔧 Hardware Components
 
-### Board 1: STM32N6570-DK Discovery Kit
+### STM32N6570-DK Discovery Kit
 
 **Purpose:** Integrated AI Vision Platform with Onboard Display
 
@@ -189,29 +186,6 @@
 - NPU-accelerated inference
 - Dual DCMIPP pipelines for simultaneous display and inference
 - ISP processing for image quality enhancement
-
-### Board 2: NUCLEO-N657X0-Q Nucleo Board
-
-**Purpose:** Flexible AI Vision Platform with External Display Options
-
-**Specifications:**
-- **MCU:** STM32N657XX (ARM Cortex-M55 + NPU)
-- **NPU:** Identical AI acceleration to Discovery Kit
-- **Camera Interface:** CSI-2 MIPI connector
-- **Display Options:**
-  - USB UVC (USB Video Class) via CN8 OTG port
-  - SPI Display via X-NUCLEO-GFX01M2 expansion
-- **Memory:**
-  - External PSRAM: 32 MB
-  - External Flash: MX25UM51245G (64 MB)
-- **Power:** USB-C via onboard ST-LINK (CN9)
-- **OTP Configuration:** xSPI optimized for 200 MHz operation
-
-**Implementation:**
-- USB UVC streaming to host PC
-- SPI display support for standalone operation
-- Identical AI capabilities to Discovery Kit
-- Flexible display configuration
 
 ### Camera Modules
 
@@ -244,7 +218,7 @@
 - **AI Framework:** STEdgeAI Core v2.2.0
 - **Post-Processing:** Custom wrapper for YOLO/SSD output parsing
 - **Camera Middleware:** CMW Camera library with ISP integration
-- **Display:** LTDC dual-layer implementation (SCRL library)
+- **Display:** LTDC dual-layer implementation
 
 ### AI/ML Stack
 - **Model Format:** TensorFlow Lite (TFLite) quantized INT8
@@ -268,8 +242,7 @@
 - **Camera Middleware:** CMW Camera library for DCMIPP control
 - **ISP Library:** Adaptive image enhancement (white balance, exposure)
 - **Post-Processing Wrapper:** ai-postprocessing-wrapper for multiple model formats
-- **Screen Library (SCRL):** Abstraction layer for USB UVC and SPI displays
-- **UVCL:** USB Video Class library for PC streaming
+- **LTDC Driver:** Dual-layer display management
 
 ---
 
@@ -278,11 +251,8 @@
 ### Prerequisites
 
 #### Required Hardware:
-- **Board:** STM32N6570-DK or NUCLEO-N657X0-Q
-- **Camera:** IMX335, STEVAL-55G1MBI, or STEVAL-66GYMAI1
-- **Display (NUCLEO only):**
-  - USB UVC: USB-C cable + host PC, or
-  - SPI Display: X-NUCLEO-GFX01M2 expansion board
+- **Board:** STM32N6570-DK Discovery Kit
+- **Camera:** IMX335 (provided), STEVAL-55G1MBI, or STEVAL-66GYMAI1
 - **Power:** USB-C to USB-C cable (required for sufficient power)
 - **Debugger:** Onboard ST-LINK (no external debugger needed)
 
@@ -306,12 +276,10 @@ cd AEROO-Space-AI-Competition-Computer-Vision-STM32N657
 
 ### Step 2: Configure Boot Mode
 
-Set your board to **[Development Mode](#boot-modes)** for initial programming:
+Set your board to **Development Mode** for initial programming:
 
-| Board | Development Mode Switch Configuration |
-|-------|--------------------------------------|
-| **STM32N6570-DK** | SW1: 1-OFF, 2-ON, 3-OFF, 4-ON |
-| **NUCLEO-N657X0-Q** | SW1: 1-OFF, 2-ON |
+**STM32N6570-DK Switch Configuration:**
+- SW1: 1-OFF, 2-ON, 3-OFF, 4-ON
 
 **Important:** Development mode allows programming external flash. After programming, switch to boot-from-flash mode.
 
@@ -329,15 +297,13 @@ See detailed guide: [How to Program Hex Files with STM32CubeProgrammer](Doc/Prog
 1. Connect board via ST-LINK (USB-C cable)
 2. Open STM32CubeProgrammer
 3. Connect to target (SWD interface)
-4. Load external flash loader:
-   - **STM32N6570-DK:** `MX66UW1G45G_STM32N6570-DK.stldr`
-   - **NUCLEO-N657X0-Q:** `MX25UM51245G_STM32N6570-NUCLEO.stldr`
+4. Load external flash loader: `MX66UW1G45G_STM32N6570-DK.stldr`
 5. Program files in order:
    - `Binary/ai_fsbl.hex` (First Stage Boot Loader)
-   - `Binary/<board>_network_data.hex` (Model weights)
-   - `Binary/<board>_GettingStarted_ObjectDetection.hex` (Firmware)
+   - `Binary/STM32N6570-DK_network_data.hex` (Model weights)
+   - `Binary/STM32N6570-DK_GettingStarted_ObjectDetection.hex` (Firmware)
 
-#### Option B: Command Line (STM32N6570-DK)
+#### Option B: Command Line
 
 ```bash
 export DKEL="<STM32CubeProgrammer Install Folder>/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr"
@@ -352,50 +318,22 @@ STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/STM32
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/STM32N6570-DK_GettingStarted_ObjectDetection.hex
 ```
 
-#### Option C: Command Line (NUCLEO-N657X0-Q)
-
-```bash
-export NUEL="<STM32CubeProgrammer Install Folder>/bin/ExternalLoader/MX25UM51245G_STM32N6570-NUCLEO.stldr"
-
-# First Stage Boot Loader
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/ai_fsbl.hex
-
-# Network parameters and biases
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q_network_data.hex
-
-# Application Firmware
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q_GettingStarted_ObjectDetection.hex
-```
-
 ---
 
 ### Step 4: Switch to Boot-from-Flash Mode
 
 After programming, configure boot mode:
 
-| Board | Boot from Flash Switch Configuration |
-|-------|--------------------------------------|
-| **STM32N6570-DK** | SW1: 1-ON, 2-ON, 3-OFF, 4-ON |
-| **NUCLEO-N657X0-Q** | SW1: 1-ON, 2-ON |
+**STM32N6570-DK Switch Configuration:**
+- SW1: 1-ON, 2-ON, 3-OFF, 4-ON
 
 ---
 
 ### Step 5: Power Cycle and Run
 
-1. **For STM32N6570-DK:**
-   - Disconnect and reconnect USB-C power
-   - Object detection will start automatically on onboard LCD
-
-2. **For NUCLEO-N657X0-Q (USB UVC):**
-   - Connect USB cable to OTG port (CN8, next to RJ45)
-   - Connect other end to host PC
-   - Power cycle board
-   - Open camera app on PC (Windows: search "Camera" in Start menu)
-
-3. **For NUCLEO-N657X0-Q (SPI Display):**
-   - Ensure X-NUCLEO-GFX01M2 is connected
-   - Power cycle board
-   - Display will show object detection output
+1. Disconnect and reconnect USB-C power
+2. Object detection will start automatically on onboard LCD
+3. Bounding boxes with class labels will appear over detected objects
 
 ---
 
@@ -406,27 +344,19 @@ After programming, configure boot mode:
 1. Open STM32CubeIDE
 2. Import project:
    - **File → Open Projects from File System**
-   - Select: `Application/<board_name>/STM32CubeIDE/`
-3. Build configuration:
-   - **STM32N6570-DK:** Default configuration
-   - **NUCLEO-N657X0-Q:** Select display mode:
-     - `SCR_LIB_SCREEN_ITF=UVCL` (USB UVC, default)
-     - `SCR_LIB_SCREEN_ITF=SPI` (SPI display)
-4. Build: **Project → Build All** (Ctrl+B)
-5. Debug: **Run → Debug** (F11)
+   - Select: `Application/STM32N6570-DK/STM32CubeIDE/`
+3. Build: **Project → Build All** (Ctrl+B)
+4. Debug: **Run → Debug** (F11)
 
 #### Using Makefile
 
 Navigate to application folder:
 
 ```bash
-cd Application/NUCLEO-N657X0-Q/  # or STM32N6570-DK
+cd Application/STM32N6570-DK/
 
 # Build (8 parallel jobs)
 make -j8
-
-# For NUCLEO with SPI display:
-make -j8 SCR_LIB_SCREEN_ITF=SPI
 ```
 
 **Load firmware via GDB:**
@@ -438,7 +368,7 @@ ST-LINK_gdbserver -p 61234 -l 1 -d -s -cp <path-to-stm32cubeprogrammer-bin> -m 1
 
 Terminal 2 (GDB client):
 ```bash
-arm-none-eabi-gdb build/Application/<board_name>/Project.elf
+arm-none-eabi-gdb build/Application/STM32N6570-DK/Project.elf
 (gdb) target remote :61234
 (gdb) monitor reset
 (gdb) load
@@ -451,11 +381,7 @@ arm-none-eabi-gdb build/Application/<board_name>/Project.elf
 
 To replace the default YOLO model with your own:
 
-**For STM32N6570-DK:**
 See detailed guide: [Deploy your tflite Model on STM32N6570-DK](Doc/Deploy-your-tflite-Model-STM32N6570-DK.md)
-
-**For NUCLEO-N657X0-Q:**
-See detailed guide: [Deploy your tflite Model on NUCLEO-N657X0-Q](Doc/Deploy-your-tflite-Model-NUCLEO-N657X0-Q.md)
 
 **Summary:**
 1. Convert model to TFLite INT8 quantized format
@@ -475,12 +401,12 @@ See detailed guide: [Deploy your tflite Model on NUCLEO-N657X0-Q](Doc/Deploy-you
    - Camera module detection and configuration
    - ISP initialization
    - Neural network model loading
-   - Display initialization (LCD or USB UVC)
+   - Display initialization (onboard LCD)
 3. **Object detection starts automatically**
 
 ### Understanding the Display
 
-**Onboard LCD / USB UVC Output:**
+**Onboard LCD Output:**
 
 ```
 ┌──────────────────────────────────────┐
@@ -678,7 +604,7 @@ void postprocess_yolov8(
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│ External Flash (64/128 MB)              │
+│ External Flash (128 MB)                 │
 ├─────────────────────────────────────────┤
 │ 0x70000000: First Stage Boot Loader     │
 │ 0x70100000: Application firmware        │
@@ -741,7 +667,7 @@ AEROO-Space-AI-Competition-Computer-Vision-STM32N657/
 ├── 📄 Release_Notes.md                   # Version history
 │
 ├── 📁 Application/                       # Firmware applications
-│   ├── 📁 STM32N6570-DK/                 # Discovery board application
+│   ├── 📁 STM32N6570-DK/                 # Discovery board application (USED)
 │   │   ├── 📁 Inc/                       # Header files
 │   │   │   ├── main.h
 │   │   │   ├── app_camerapipeline.h
@@ -759,22 +685,19 @@ AEROO-Space-AI-Competition-Computer-Vision-STM32N657/
 │   │   │   └── STM32N657xx.ld            # Linker script
 │   │   └── 📄 Makefile                   # Command-line build
 │   │
-│   └── 📁 NUCLEO-N657X0-Q/               # Nucleo board application
-│       ├── (Same structure as STM32N6570-DK)
+│   └── 📁 NUCLEO-N657X0-Q/               # Nucleo board (reference only, not used)
+│       ├── (Alternative board implementation)
 │
 ├── 📁 Binary/                            # Prebuilt hex files
 │   ├── ai_fsbl.hex                       # First Stage Boot Loader
-│   ├── STM32N6570-DK_network_data.hex    # Model weights (DK)
-│   ├── STM32N6570-DK_GettingStarted_ObjectDetection.hex
-│   ├── NUCLEO-N657X0-Q_network_data.hex  # Model weights (Nucleo)
-│   └── NUCLEO-N657X0-Q_GettingStarted_ObjectDetection.hex
+│   ├── STM32N6570-DK_network_data.hex    # Model weights
+│   └── STM32N6570-DK_GettingStarted_ObjectDetection.hex
 │
 ├── 📁 Doc/                               # Documentation
 │   ├── Application-Overview.md
 │   ├── Boot-Overview.md
 │   ├── Build-Options.md                  # Camera selection, aspect ratio
 │   ├── Deploy-your-tflite-Model-STM32N6570-DK.md
-│   ├── Deploy-your-tflite-Model-NUCLEO-N657X0-Q.md
 │   └── Program-Hex-Files-STM32CubeProgrammer.md
 │
 ├── 📁 Model/                             # Neural network models
@@ -799,9 +722,6 @@ AEROO-Space-AI-Competition-Computer-Vision-STM32N657/
 │   │   │   ├── vd55g1/
 │   │   │   └── vd6g/
 │   │   └── 📁 ISP_Library/               # Image signal processing
-│   ├── 📁 screenl/                       # Display abstraction layer
-│   │   ├── 📁 uvcl/                      # USB Video Class library
-│   │   └── README.md
 │   └── 📁 lib_vision_models_pp/          # Vision model post-processing
 │
 ├── 📁 STM32Cube_FW_N6/                   # STM32 HAL and drivers
@@ -811,7 +731,7 @@ AEROO-Space-AI-Competition-Computer-Vision-STM32N657/
 │   │   └── BSP/                          # Board support package
 │   └── 📁 Middlewares/
 │       ├── ST/usbx/                      # USB stack
-│       └── ST/netxduo/                   # Network stack (unused)
+│       └── ST/netxduo/                   # Network stack
 │
 ├── 📁 STM32CubeN6_ref/                   # Reference firmware
 │
@@ -1071,7 +991,7 @@ void postprocess_custom(
 - ✅ Proven performance on COTS hardware (STM32N6)
 
 **3. Innovation in Space Technology**
-- ✅ First NPU-accelerated vision system on STM32 platform
+- ✅ NPU-accelerated vision system on STM32 platform
 - ✅ Dual-pipeline architecture for simultaneous display and inference
 - ✅ Adaptive ISP for extreme lighting conditions
 
