@@ -82,6 +82,10 @@ This research follows NASA's technology transfer paradigm:
 2. **Technology Transfer**: Commercial spin-offs for terrestrial solar monitoring
 3. **Future Scalability**: Advanced material science sensor integration
 
+## Live Demo
+
+[Visit Website](https://solar-node-ai.onrender.com/)
+
 ## Competition
 
 **AEROO Space AI Competition 2026** - Exploring the World of Science
