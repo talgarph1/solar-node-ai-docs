@@ -12,7 +12,6 @@ You can review the required competition documents here. To examine the two appli
 
 ## Related Repositories
 
-- **Main Website**: [solar-node-ai](https://github.com/slymn80/solar-node-ai) - Project website with documentation pages
 - **Computer Vision System**: [AEROO-Space-AI-Competition-Computer-Vision-STM32N657](https://github.com/talgarph1/AEROO-Space-AI-Competition-Computer-Vision-STM32N657) - STM32N6 NPU-based vision processing
 - **IoT & ML System**: [AEROO-Space-AI-Competition-IOT-MOBILE-ML](https://github.com/talgarph1/AEROO-Space-AI-Competition-IOT-MOBILE-ML) - STM32 IoT board, ML model, and Flutter mobile app
 
