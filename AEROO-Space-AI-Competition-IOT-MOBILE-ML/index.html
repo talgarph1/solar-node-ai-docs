@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Solar-Battery Node AI + Vision</title>
+    <style>
+        body{
+            font-family:'Segoe UI',Arial,sans-serif;
+            margin:0;
+            padding:10px;
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .container{
+            max-width:1200px;
+            width:100%;
+            background:white;
+            padding:15px;
+            border-radius:12px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.3)
+        }
+        h1{
+            color:#333;
+            text-align:center;
+            margin-bottom:3px;
+            font-size:22px
+        }
+        .subtitle{
+            text-align:center;
+            color:#666;
+            font-size:11px;
+            margin-bottom:15px
+        }
+        .intro-overlay{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.95);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
+            backdrop-filter:blur(10px);
+            transition:opacity 0.5s ease-out;
+            opacity:1
+        }
+        .intro-overlay.hidden{
+            opacity:0;
+            pointer-events:none
+        }
+        .intro-video-container{
+            position:relative;
+            max-width:90%;
+            max-height:90%;
+            border-radius:12px;
+            overflow:hidden;
+            box-shadow:0 20px 60px rgba(0,0,0,0.5)
+        }
+        .intro-video-container video{
+            width:100%;
+            height:auto;
+            display:block
+        }
+        .play-intro{
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            background:rgba(102,126,234,0.95);
+            color:white;
+            border:3px solid white;
+            padding:25px 50px;
+            border-radius:50px;
+            cursor:pointer;
+            font-size:24px;
+            font-weight:bold;
+            backdrop-filter:blur(10px);
+            transition:all 0.3s;
+            box-shadow:0 10px 40px rgba(0,0,0,0.6);
+            animation:pulse 2s infinite
+        }
+        .play-intro:hover{
+            background:rgba(102,126,234,1);
+            transform:translate(-50%,-50%) scale(1.1);
+            box-shadow:0 15px 50px rgba(0,0,0,0.8)
+        }
+        @keyframes pulse{
+            0%,100%{box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+            50%{box-shadow:0 15px 60px rgba(102,126,234,0.8)}
+        }
+        .skip-intro{
+            position:absolute;
+            bottom:20px;
+            right:20px;
+            background:rgba(255,255,255,0.2);
+            color:white;
+            border:2px solid white;
+            padding:10px 20px;
+            border-radius:25px;
+            cursor:pointer;
+            font-size:14px;
+            font-weight:bold;
+            backdrop-filter:blur(5px);
+            transition:all 0.3s
+        }
+        .skip-intro:hover{
+            background:rgba(255,255,255,0.3);
+            transform:scale(1.05)
+        }
+        .main-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:15px;
+            margin-bottom:10px
+        }
+        .section{
+            background:#f9f9f9;
+            padding:12px;
+            border-radius:8px;
+            border:2px solid #ddd
+        }
+        .section-title{
+            font-size:14px;
+            font-weight:bold;
+            color:#555;
+            margin-bottom:10px;
+            text-align:center;
+            text-transform:uppercase;
+            letter-spacing:1px
+        }
+        .board-info{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            margin-bottom:10px;
+            padding:10px;
+            background:linear-gradient(135deg,rgba(102,126,234,0.15) 0%,rgba(118,75,162,0.15) 100%);
+            border-radius:6px;
+            border:1px solid rgba(102,126,234,0.3)
+        }
+        .board-label{
+            font-size:11px;
+            color:#667eea;
+            font-weight:bold;
+            letter-spacing:0.5px
+        }
+        .board-image{
+            width:50px;
+            height:auto;
+            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))
+        }
+        .metrics-grid{
+            display:grid;
+            grid-template-columns:repeat(2,1fr);
+            gap:8px;
+            margin-bottom:10px
+        }
+        .metric-card{
+            background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);
+            padding:10px;
+            border-radius:6px;
+            text-align:center
+        }
+        .metric-label{
+            font-size:9px;
+            color:#555;
+            text-transform:uppercase;
+            letter-spacing:1px
+        }
+        .metric-value{
+            font-size:20px;
+            font-weight:bold;
+            color:#333;
+            margin:5px 0
+        }
+        .battery-card{
+            background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%);
+            padding:12px;
+            border-radius:8px;
+            text-align:center;
+            margin-bottom:10px
+        }
+        .battery-icon{
+            width:50px;
+            height:25px;
+            border:3px solid #333;
+            border-radius:4px;
+            position:relative;
+            margin:8px auto
+        }
+        .battery-icon:after{
+            content:'';
+            position:absolute;
+            right:-7px;
+            top:7px;
+            width:4px;
+            height:11px;
+            background:#333;
+            border-radius:0 2px 2px 0
+        }
+        .battery-level{
+            height:100%;
+            border-radius:2px;
+            transition:width 1s
+        }
+        .health-bar{
+            width:100%;
+            height:28px;
+            background:#e0e0e0;
+            border-radius:14px;
+            overflow:hidden;
+            margin:8px 0;
+            position:relative
+        }
+        .health-fill{
+            height:100%;
+            transition:width 1s;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:white;
+            font-weight:bold;
+            font-size:12px
+        }
+        .value{
+            font-size:24px;
+            font-weight:bold;
+            color:#333;
+            margin:5px 0
+        }
+        .label{
+            font-size:10px;
+            color:#555;
+            text-transform:uppercase;
+            letter-spacing:1px
+        }
+        .canvas-container{
+            background:#1a1a1a;
+            border-radius:8px;
+            padding:10px;
+            margin:10px 0;
+            position:relative
+        }
+        #solarCanvas{
+            width:100%;
+            height:200px;
+            background:#000;
+            border-radius:6px;
+            display:block
+        }
+        .vision-stats{
+            display:grid;
+            grid-template-columns:repeat(5,1fr);
+            gap:6px;
+            margin-top:10px
+        }
+        .vision-stat{
+            background:#fff;
+            padding:8px;
+            border-radius:6px;
+            text-align:center;
+            border:2px solid #ddd
+        }
+        .vision-stat-icon{
+            font-size:20px;
+            margin-bottom:3px
+        }
+        .vision-stat-label{
+            font-size:9px;
+            color:#666;
+            text-transform:uppercase
+        }
+        .vision-stat-value{
+            font-size:16px;
+            font-weight:bold;
+            color:#333;
+            margin:3px 0
+        }
+        .panel-health{
+            background:linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%);
+            padding:12px;
+            border-radius:8px;
+            text-align:center;
+            margin:10px 0
+        }
+        .timestamp{
+            text-align:center;
+            color:#999;
+            font-size:10px;
+            margin-top:10px
+        }
+        .controls{
+            text-align:center;
+            margin-top:10px
+        }
+        button{
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            color:white;
+            border:none;
+            padding:8px 20px;
+            border-radius:20px;
+            cursor:pointer;
+            margin:4px;
+            font-size:12px;
+            font-weight:bold;
+            box-shadow:0 4px 15px rgba(102,126,234,0.4);
+            transition:all 0.3s
+        }
+        button:hover{
+            transform:translateY(-2px);
+            box-shadow:0 6px 20px rgba(102,126,234,0.6)
+        }
+        .status-dot{
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            display:inline-block;
+            margin-right:5px;
+            animation:pulse 2s infinite
+        }
+        @keyframes pulse{
+            0%,100%{opacity:1}
+            50%{opacity:.5}
+        }
+        .info-panel{
+            background:linear-gradient(135deg,#e0f7fa 0%,#e1bee7 100%);
+            padding:8px;
+            border-radius:8px;
+            margin-bottom:10px;
+            font-size:10px
+        }
+        .info-grid{
+            display:flex;
+            justify-content:space-around;
+            flex-wrap:wrap
+        }
+        .led-panel{
+            background:#f5f5f5;
+            padding:8px;
+            border-radius:6px;
+            margin:8px 0;
+            text-align:center
+        }
+        #ledIndicator{
+            display:inline-block;
+            width:30px;
+            height:30px;
+            border-radius:50%;
+            border:3px solid #333;
+            margin:0 10px;
+            transition:background 0.1s
+        }
+        .led-info{
+            font-size:9px;
+            color:#666;
+            margin-top:8px
+        }
+        .data-feed{
+            background:#f9f9f9;
+            border-radius:6px;
+            padding:6px;
+            margin:6px 0;
+            border:1px solid #ddd
+        }
+        .data-feed h3{
+            font-size:10px;
+            color:#555;
+            margin-bottom:4px;
+            text-align:center
+        }
+        .data-table{
+            width:100%;
+            font-size:9px;
+            border-collapse:collapse
+        }
+        .data-table th{
+            background:#667eea;
+            color:white;
+            padding:4px 3px;
+            text-align:left;
+            font-size:8px
+        }
+        .data-table td{
+            padding:4px 3px;
+            border-bottom:1px solid #eee;
+            color:#555
+        }
+        .data-new{
+            animation:highlight 1s
+        }
+        @keyframes highlight{
+            0%{background:#ffd700}
+            100%{background:transparent}
+        }
+        .ai-assistant{
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            padding:12px;
+            border-radius:8px;
+            margin:10px 0;
+            color:white
+        }
+        .ai-title{
+            font-size:14px;
+            font-weight:bold;
+            text-align:center;
+            margin-bottom:8px;
+            text-transform:uppercase;
+            letter-spacing:1px
+        }
+        .ai-chat{
+            background:rgba(255,255,255,0.95);
+            border-radius:6px;
+            padding:10px;
+            margin-bottom:8px;
+            max-height:200px;
+            overflow-y:auto;
+            color:#333
+        }
+        .ai-message{
+            margin:6px 0;
+            padding:8px;
+            border-radius:6px;
+            font-size:11px;
+            line-height:1.4
+        }
+        .ai-message.user{
+            background:#e3f2fd;
+            text-align:right
+        }
+        .ai-message.assistant{
+            background:#f1f8e9;
+        }
+        .ai-message.system{
+            background:#fff3e0;
+            font-style:italic;
+            text-align:center;
+            font-size:10px
+        }
+        .ai-input-group{
+            display:flex;
+            gap:6px
+        }
+        .ai-input{
+            flex:1;
+            padding:8px;
+            border:2px solid rgba(255,255,255,0.5);
+            border-radius:20px;
+            font-size:11px;
+            outline:none
+        }
+        .ai-button{
+            background:rgba(255,255,255,0.9);
+            color:#667eea;
+            border:none;
+            padding:8px 16px;
+            border-radius:20px;
+            cursor:pointer;
+            font-size:11px;
+            font-weight:bold;
+            transition:all 0.3s
+        }
+        .ai-button:hover{
+            background:white;
+            transform:scale(1.05)
+        }
+        .ai-button:disabled{
+            opacity:0.5;
+            cursor:not-allowed
+        }
+        .ai-suggestions{
+            display:flex;
+            gap:4px;
+            flex-wrap:wrap;
+            margin-top:6px
+        }
+        .ai-suggestion-btn{
+            background:rgba(255,255,255,0.2);
+            color:white;
+            border:1px solid rgba(255,255,255,0.5);
+            padding:4px 8px;
+            border-radius:12px;
+            cursor:pointer;
+            font-size:9px;
+            transition:all 0.3s
+        }
+        .ai-suggestion-btn:hover{
+            background:rgba(255,255,255,0.3)
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro Video Overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-video-container">
+            <video id="introVideo" playsinline preload="auto">
+                <source src="images/intro.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <button class="play-intro" id="playIntro" onclick="playIntroVideo()">▶️ Play Intro</button>
+            <button class="skip-intro" id="skipIntro" onclick="skipIntro()" style="display:none">Skip Intro ⏭</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Solar-Battery Node AI:<br><span style="font-size:16px;font-weight:normal;color:#666">Power Health & Vision Anomaly Detection</span></h1>
+
+        <div class="info-panel">
+            <div class="info-grid">
+                <div><strong>Board 1:</strong> STM32 B-L475E-IOT01A</div>
+                <div><strong>Board 2:</strong> STM32N6</div>
+                <div><strong>Server:</strong> <span id="lastUpdate">-</span></div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- LEFT: Battery Health -->
+            <div class="section">
+                <div class="section-title">⚡ Battery Health Monitor</div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Temperature</div>
+                        <div class="metric-value" id="temp">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Humidity</div>
+                        <div class="metric-value" id="humidity">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Voltage</div>
+                        <div class="metric-value" id="voltage">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Current</div>
+                        <div class="metric-value" id="current">-</div>
+                    </div>
+                </div>
+
+                <div class="battery-card" id="batteryCard">
+                    <div class="label">Battery Health</div>
+                    <div class="battery-icon">
+                        <div class="battery-level" id="batteryLevel"></div>
+                    </div>
+                    <div class="value" id="batteryHealth">-</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="healthFill">Loading...</div>
+                    </div>
+                    <div class="label" id="cycleInfo">-</div>
+                </div>
+
+                <div class="data-feed">
+                    <h3>Current Sensor Data (NASA Dataset Format)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:50px">Time</th>
+                                <th>Temp</th>
+                                <th>Volt</th>
+                                <th>Curr</th>
+                                <th>Humid</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataFeedBody">
+                            <tr><td colspan="5" style="text-align:center;color:#999">Waiting...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="led-panel">
+                    <div class="label">LED Status (Automated)</div>
+                    <div style="margin:10px 0">
+                        <div id="ledIndicator"></div>
+                        <span id="ledStatus">Initializing...</span>
+                    </div>
+                    <div class="led-info">
+                        🟢 Green (>70%) - Healthy | 🟡 Yellow (50-70%) - Blink (1Hz) | 🔴 Red (<50%) - Blink (1Hz)
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Vision Anomaly Detection -->
+            <div class="section">
+                <div class="section-title">🔍 Solar Panel Vision</div>
+
+                <div class="canvas-container">
+                    <canvas id="solarCanvas" width="400" height="200"></canvas>
+                </div>
+
+                <div class="panel-health" id="panelHealth">
+                    <div class="label">Panel Health Score</div>
+                    <div class="value" id="panelScore">-</div>
+                    <div class="label" id="panelStatus">Initializing...</div>
+                </div>
+
+                <div class="vision-stats">
+                    <div class="vision-stat">
+                        <div class="vision-stat-icon">■</div>
+                        <div class="vision-stat-label">Cover</div>
+                        <div class="vision-stat-value" id="coverCount" style="color:#f44336">0</div>
+                    </div>
+                    <div class="vision-stat">
+                        <div class="vision-stat-icon">⚡</div>
+                        <div class="vision-stat-label">Crack</div>
+                        <div class="vision-stat-value" id="crackCount" style="color:#ff5722">0</div>
+                    </div>
+                    <div class="vision-stat">
+                        <div class="vision-stat-icon">●</div>
+                        <div class="vision-stat-label">Dust</div>
+                        <div class="vision-stat-value" id="dustCount" style="color:#ff9800">0</div>
+                    </div>
+                    <div class="vision-stat">
+                        <div class="vision-stat-icon">✓</div>
+                        <div class="vision-stat-label">Normal</div>
+                        <div class="vision-stat-value" id="normalCount" style="color:#4caf50">0</div>
+                    </div>
+                    <div class="vision-stat">
+                        <div class="vision-stat-icon">⏱</div>
+                        <div class="vision-stat-label">Inference</div>
+                        <div class="vision-stat-value" id="inferenceTime">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Assistant -->
+        <div class="ai-assistant">
+            <div class="ai-title">🤖 SOLAR NODE AI ASSISTANT</div>
+            <div class="ai-chat" id="aiChat">
+                <div class="ai-message system">
+                    AI Assistant ready! Ask me about your solar panel and battery health.
+                </div>
+            </div>
+            <div class="ai-input-group">
+                <input type="text" id="aiInput" class="ai-input" placeholder="Ask about panel health, battery status, or maintenance...">
+                <button onclick="askAI()" id="aiSendBtn" class="ai-button">Send</button>
+            </div>
+            <div class="ai-suggestions">
+                <button class="ai-suggestion-btn" onclick="askQuickQuestion('What is the current system status?')">System Status</button>
+                <button class="ai-suggestion-btn" onclick="askQuickQuestion('Should I clean the solar panels?')">Need Cleaning?</button>
+                <button class="ai-suggestion-btn" onclick="askQuickQuestion('How is battery health?')">Battery Health</button>
+                <button class="ai-suggestion-btn" onclick="askQuickQuestion('Any critical issues?')">Critical Issues</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="updateData()">Refresh Battery</button>
+            <button onclick="resetSimulation()">Reset Simulation</button>
+            <button onclick="promptForCardIP()" style="background:#667eea">🌐 Change Card IP</button>
+        </div>
+
+        <div class="timestamp">
+            <span class="status-dot" style="background:#4CAF50"></span>
+            <span id="lastUpdate">Connecting...</span>
+        </div>
+    </div>
+
+    <script>
+        // Dynamic IP Configuration with localStorage
+        let CARD_IP = localStorage.getItem('stm32_card_ip') || 'http://10.182.26.225';
+        const BACKEND_URL = 'http://localhost:5000';
+
+        let canvas, ctx;
+        let lastHealth = 100;
+        let ledBlinkInterval = null;
+        let currentLedState = false;
+        let latestVisionData = null; // Store latest vision data for AI monitoring
+        let latestBatteryData = null; // Store latest battery data for AI monitoring
+        let connectionRetries = 0;
+        const MAX_RETRIES = 3;
+
+        function updateLED(health) {
+            const indicator = document.getElementById('ledIndicator');
+            const status = document.getElementById('ledStatus');
+
+            if (ledBlinkInterval) {
+                clearInterval(ledBlinkInterval);
+            }
+
+            if (health > 70) {
+                // Green - Steady ON (no blink)
+                indicator.style.background = '#4CAF50';
+                indicator.style.boxShadow = '0 0 20px #4CAF50';
+                indicator.style.display = 'inline-block';
+                status.innerHTML = '🟢 Green - Healthy (Steady)';
+            } else if (health > 50) {
+                // Yellow - 1 blink per second (1 Hz)
+                status.innerHTML = '🟡 Yellow - Warning (1 blink/sec)';
+                currentLedState = true;
+                ledBlinkInterval = setInterval(() => {
+                    currentLedState = !currentLedState;
+                    if (currentLedState) {
+                        indicator.style.background = '#FFC107';
+                        indicator.style.boxShadow = '0 0 25px #FFC107';
+                        indicator.style.display = 'inline-block';
+                    } else {
+                        indicator.style.display = 'none';
+                    }
+                }, 500); // 500ms on, 500ms off = 1 Hz
+            } else {
+                // Red - 1 blink per second (1 Hz)
+                status.innerHTML = '🔴 Red - CRITICAL (1 blink/sec)';
+                currentLedState = true;
+                ledBlinkInterval = setInterval(() => {
+                    currentLedState = !currentLedState;
+                    if (currentLedState) {
+                        indicator.style.background = '#F44336';
+                        indicator.style.boxShadow = '0 0 30px #F44336';
+                        indicator.style.display = 'inline-block';
+                    } else {
+                        indicator.style.display = 'none';
+                    }
+                }, 500); // 500ms on, 500ms off = 1 Hz
+            }
+        }
+
+        function addDataFeedRow(data) {
+            const tbody = document.getElementById('dataFeedBody');
+
+            // Create new row
+            const row = document.createElement('tr');
+            row.className = 'data-new';
+            row.innerHTML =
+                '<td>' + data.time + '</td>' +
+                '<td>' + data.temp_measured + '°C</td>' +
+                '<td>' + data.voltage_measured + 'V</td>' +
+                '<td>' + data.current_measured + 'A</td>' +
+                '<td>' + data.humidity + '%</td>';
+
+            // Remove "Waiting..." message if it exists
+            const waitingMsg = tbody.querySelector('td[colspan="5"]');
+            if (waitingMsg) {
+                tbody.innerHTML = '';
+            }
+            // Replace old row with new one (keep only 1 row)
+            if (tbody.firstChild && tbody.firstChild !== row) {
+                tbody.innerHTML = '';
+            }
+            tbody.appendChild(row);
+        }
+
+        function initCanvas() {
+            canvas = document.getElementById('solarCanvas');
+            ctx = canvas.getContext('2d');
+            drawSolarPanel();
+        }
+
+        function drawSolarPanel(visionData = null) {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw solar panel grid (4x4)
+            const cellWidth = canvas.width / 4;
+            const cellHeight = canvas.height / 4;
+
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+
+            // Draw grid lines
+            for (let i = 0; i <= 4; i++) {
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(i * cellWidth, 0);
+                ctx.lineTo(i * cellWidth, canvas.height);
+                ctx.stroke();
+
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellHeight);
+                ctx.lineTo(canvas.width, i * cellHeight);
+                ctx.stroke();
+            }
+
+            // Draw panel cells (blue gradient = clean)
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const x = col * cellWidth + 5;
+                    const y = row * cellHeight + 5;
+                    const w = cellWidth - 10;
+                    const h = cellHeight - 10;
+
+                    const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
+                    gradient.addColorStop(0, '#1e3c72');
+                    gradient.addColorStop(1, '#2a5298');
+
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, w, h);
+                }
+            }
+
+            // Draw anomalies if vision data available
+            if (visionData && visionData.raw_data && visionData.raw_data.objs) {
+                visionData.raw_data.objs.forEach(obj => {
+                    const x = obj.x * canvas.width;
+                    const y = obj.y * canvas.height;
+                    const w = obj.w * canvas.width * 0.15;
+                    const h = obj.h * canvas.height * 0.15;
+
+                    const label = obj.label || '';
+                    const confidence = obj.p || 0;
+
+                    // Draw anomaly marker
+                    if (label === 'dust') {
+                        // Dust: orange/yellow particles with glow
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#ff9800';
+                        ctx.fillStyle = `rgba(255, 152, 0, ${confidence * 0.8})`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, Math.max(w * 0.3, 15), 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        // Dust particles around
+                        for (let i = 0; i < 3; i++) {
+                            const offsetX = (Math.random() - 0.5) * 30;
+                            const offsetY = (Math.random() - 0.5) * 30;
+                            ctx.fillStyle = `rgba(255, 152, 0, ${confidence * 0.4})`;
+                            ctx.beginPath();
+                            ctx.arc(x + offsetX, y + offsetY, 5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+
+                        // Label
+                        ctx.fillStyle = '#ff9800';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText('●', x - 7, y + 5);
+                        ctx.fillText('●', x - 7, y + 5);
+
+                    } else if (label === 'cover') {
+                        // Cover: dark red overlay with warning
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#f44336';
+                        ctx.fillStyle = `rgba(244, 67, 54, ${confidence * 0.6})`;
+                        ctx.fillRect(x - w/2, y - h/2, Math.max(w, 40), Math.max(h, 40));
+                        ctx.shadowBlur = 0;
+
+                        // Warning border
+                        ctx.strokeStyle = '#f44336';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(x - w/2, y - h/2, Math.max(w, 40), Math.max(h, 40));
+
+                        // Label
+                        ctx.fillStyle = '#f44336';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText('■', x - 7, y + 5);
+                        ctx.fillText('■', x - 7, y + 5);
+
+                    } else if (label === 'crack') {
+                        // Crack: lightning/crack lines in red-orange
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#ff5722';
+                        ctx.strokeStyle = `rgba(255, 87, 34, ${confidence * 0.9})`;
+                        ctx.lineWidth = 4;
+
+                        // Draw jagged crack line
+                        ctx.beginPath();
+                        ctx.moveTo(x - w, y - h);
+                        ctx.lineTo(x - w/2, y);
+                        ctx.lineTo(x, y - h/2);
+                        ctx.lineTo(x + w/2, y + h/2);
+                        ctx.lineTo(x + w, y);
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+
+                        // Label
+                        ctx.fillStyle = '#ff5722';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText('⚡', x - 7, y + 5);
+                        ctx.fillText('⚡', x - 7, y + 5);
+                    }
+
+                    // Confidence badge
+                    const confText = `${(confidence * 100).toFixed(0)}%`;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(x - 20, y - 30, 40, 18);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(confText, x, y - 17);
+                    ctx.textAlign = 'left';
+                });
+            }
+
+            // Panel info overlay
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(10, 10, 120, 40);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('Solar Panel', 15, 28);
+            ctx.font = '10px Arial';
+            ctx.fillText('STM32N6 Vision', 15, 43);
+        }
+
+        function updateVisionData() {
+            fetch(BACKEND_URL + '/vision')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const analysis = data.analysis;
+
+                        // Store latest vision data for AI monitoring
+                        latestVisionData = data;
+
+                        // Update stats (all 4 classes + inference time)
+                        document.getElementById('coverCount').textContent = analysis.cover_count;
+                        document.getElementById('crackCount').textContent = analysis.crack_count;
+                        document.getElementById('dustCount').textContent = analysis.dust_count;
+                        document.getElementById('normalCount').textContent = analysis.normal_count;
+                        document.getElementById('inferenceTime').textContent = analysis.inference_ms + 'ms';
+
+                        // Update panel health
+                        const score = analysis.panel_health_score;
+                        const status = analysis.panel_status;
+                        const color = analysis.panel_color;
+
+                        document.getElementById('panelScore').textContent = score + '%';
+                        document.getElementById('panelStatus').textContent = status;
+                        document.getElementById('panelHealth').style.background =
+                            `linear-gradient(135deg, ${color} 0%, #8fd3f4 100%)`;
+
+                        // Redraw canvas with anomalies
+                        drawSolarPanel(data);
+
+                        // Auto AI alert check for critical conditions
+                        checkAndAlertCriticalConditions(analysis);
+
+                        // PROACTIVE AI MONITORING - Run if battery data is available
+                        if (latestBatteryData) {
+                            proactiveAIMonitor(latestBatteryData, latestVisionData);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Vision error:', error);
+                });
+        }
+
+        function updateData() {
+            let savedCardData = null;
+
+            // 1. Get temperature and humidity from card
+            fetch(CARD_IP + '/api/temperature', {
+                signal: AbortSignal.timeout(5000) // 5 second timeout
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error('Card returned error: ' + r.status);
+                    connectionRetries = 0; // Reset on success
+                    return r.json();
+                })
+                .then(cardData => {
+                    savedCardData = cardData;
+                    document.getElementById('temp').innerHTML = cardData.temperature + ' °C';
+                    document.getElementById('humidity').innerHTML = cardData.humidity + ' %';
+
+                    // 2. Get prediction from backend
+                    return fetch(BACKEND_URL + '/predict?temperature=' + cardData.temperature);
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const h = data.prediction.battery_health_percent;
+                    const c = data.prediction.health_color;
+                    const s = data.prediction.health_status;
+
+                    document.getElementById('voltage').innerHTML = data.measurements.voltage.toFixed(2) + ' V';
+                    document.getElementById('current').innerHTML = data.measurements.current.toFixed(2) + ' A';
+
+                    document.getElementById('batteryHealth').innerHTML = h.toFixed(1) + ' %';
+                    document.getElementById('batteryLevel').style.width = h + '%';
+                    document.getElementById('batteryLevel').style.background = c;
+                    document.getElementById('healthFill').style.width = h + '%';
+                    document.getElementById('healthFill').style.background = c;
+                    document.getElementById('healthFill').textContent = s;
+                    document.getElementById('cycleInfo').textContent =
+                        'Cycle: ' + data.measurements.cycle_count + ' | Remaining: ' + data.prediction.remaining_cycles;
+
+                    // Update LED (only if significant change)
+                    if (Math.abs(h - lastHealth) > 0.1) {
+                        updateLED(h);
+                        lastHealth = h;
+                    }
+
+                    const now = new Date();
+                    const cardIPDisplay = CARD_IP.replace('http://', '');
+                    document.getElementById('lastUpdate').innerHTML =
+                        'Last Update: ' + now.toLocaleTimeString('en-US') + ' | Card: ' + cardIPDisplay;
+                    document.getElementById('lastUpdate').style.color = '#333';
+
+                    // Update data feed table
+                    if (savedCardData) {
+                        addDataFeedRow({
+                            time: now.toLocaleTimeString('en-US'),
+                            temp_measured: savedCardData.temperature,
+                            voltage_measured: data.measurements.voltage.toFixed(2),
+                            current_measured: data.measurements.current.toFixed(2),
+                            humidity: savedCardData.humidity
+                        });
+                    }
+
+                    // Store latest battery data for AI monitoring
+                    latestBatteryData = data;
+
+                    // Check for critical battery conditions (legacy)
+                    checkBatteryCriticalCondition(h);
+
+                    // PROACTIVE AI MONITORING - Comprehensive analysis
+                    if (latestVisionData) {
+                        proactiveAIMonitor(latestBatteryData, latestVisionData);
+                    }
+                })
+                .catch(error => {
+                    console.error('Battery error:', error);
+                    connectionRetries++;
+
+                    // Auto-prompt for IP after failures
+                    if (connectionRetries >= MAX_RETRIES) {
+                        const statusElement = document.getElementById('lastUpdate');
+                        if (statusElement) {
+                            statusElement.innerHTML = '❌ Connection Failed - Click to Update IP';
+                            statusElement.style.cursor = 'pointer';
+                            statusElement.style.color = '#F44336';
+                            statusElement.onclick = () => {
+                                promptForCardIP();
+                                statusElement.onclick = null;
+                                statusElement.style.cursor = 'default';
+                            };
+                        }
+
+                        // Also show alert on first failure
+                        if (connectionRetries === MAX_RETRIES) {
+                            setTimeout(() => {
+                                const userWantsToUpdate = confirm(
+                                    '⚠️ Cannot connect to STM32 card!\n\n' +
+                                    'Current IP: ' + CARD_IP + '\n\n' +
+                                    'The card may have received a new IP address.\n' +
+                                    'Check your serial monitor for the current IP.\n\n' +
+                                    'Would you like to update the card IP address now?'
+                                );
+                                if (userWantsToUpdate) {
+                                    promptForCardIP();
+                                }
+                            }, 1000);
+                        }
+                    }
+                });
+        }
+
+        function resetSimulation() {
+            fetch(BACKEND_URL + '/reset', {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Reset:', data.message);
+                    // Clear data feed
+                    document.getElementById('dataFeedBody').innerHTML =
+                        '<tr><td colspan="5" style="text-align:center;color:#999">Waiting...</td></tr>';
+                    // Clear AI chat completely
+                    document.getElementById('aiChat').innerHTML = '';
+                    // Reset critical alert tracking
+                    lastCriticalAlertTime = 0;
+                    lastBatteryHealth = 100;
+                    lastPanelHealth = 100;
+                    lastTemperature = 25;
+                    lastVoltage = 4.0;
+                    lastCurrent = 1.0;
+                    lastDustCount = 0;
+                    lastCrackCount = 0;
+                    lastCoverCount = 0;
+                    consecutiveGoodReadings = 0;
+                    consecutiveBadReadings = 0;
+                    latestVisionData = null;
+                    latestBatteryData = null;
+                    connectionRetries = 0;
+                    // Immediately update to show reset values
+                    setTimeout(updateData, 200);
+                })
+                .catch(error => {
+                    console.error('Reset failed:', error);
+                });
+        }
+
+        function addAIMessage(text, type) {
+            const chatDiv = document.getElementById('aiChat');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ai-message ' + type;
+            messageDiv.textContent = text;
+            chatDiv.appendChild(messageDiv);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function askQuickQuestion(question) {
+            document.getElementById('aiInput').value = question;
+            askAI();
+        }
+
+        function askAI() {
+            const input = document.getElementById('aiInput');
+            const sendBtn = document.getElementById('aiSendBtn');
+            const question = input.value.trim();
+
+            if (!question) return;
+
+            // Add user message
+            addAIMessage(question, 'user');
+            input.value = '';
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Thinking...';
+
+            // Call AI backend
+            fetch(BACKEND_URL + '/ai-assistant', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({question: question})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    addAIMessage(data.answer, 'assistant');
+                } else {
+                    addAIMessage('Error: ' + (data.error || 'Unknown error'), 'system');
+                }
+            })
+            .catch(error => {
+                console.error('AI error:', error);
+                addAIMessage('Error connecting to AI assistant. Please try again.', 'system');
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            });
+        }
+
+        // Critical condition tracking
+        let lastCriticalAlertTime = 0;
+        let lastBatteryHealth = 100;
+        let lastPanelHealth = 100;
+        let lastTemperature = 25;
+        let lastVoltage = 4.0;
+        let lastCurrent = 1.0;
+        let lastDustCount = 0;
+        let lastCrackCount = 0;
+        let lastCoverCount = 0;
+        let consecutiveGoodReadings = 0;
+        let consecutiveBadReadings = 0;
+        const CRITICAL_ALERT_INTERVAL = 45000; // 45 seconds between auto alerts
+        const GOOD_NEWS_INTERVAL = 120000; // 2 minutes for positive updates
+
+        function checkAndAlertCriticalConditions(analysis) {
+            const now = Date.now();
+            const panelHealth = analysis.panel_health_score;
+
+            // Check if enough time passed since last alert
+            if (now - lastCriticalAlertTime < CRITICAL_ALERT_INTERVAL) {
+                return;
+            }
+
+            // Check for critical panel health (< 50%)
+            if (panelHealth < 50 && lastPanelHealth >= 50) {
+                lastCriticalAlertTime = now;
+                autoAskAI('⚠️ CRITICAL: Panel health dropped below 50%. What should I do?');
+            }
+            // Check for significant panel health drop (> 20% decrease)
+            else if (lastPanelHealth - panelHealth > 20) {
+                lastCriticalAlertTime = now;
+                autoAskAI('⚠️ WARNING: Panel health dropped significantly. Please analyze the situation.');
+            }
+            // Check for multiple anomalies
+            else if ((analysis.cover_count + analysis.crack_count + analysis.dust_count) >= 4) {
+                lastCriticalAlertTime = now;
+                autoAskAI('⚠️ ALERT: Multiple panel anomalies detected. Should I take action?');
+            }
+
+            lastPanelHealth = panelHealth;
+        }
+
+        function checkBatteryCriticalCondition(batteryHealth) {
+            const now = Date.now();
+
+            // Check if enough time passed since last alert
+            if (now - lastCriticalAlertTime < CRITICAL_ALERT_INTERVAL) {
+                return;
+            }
+
+            // Check for critical battery health (< 50%)
+            if (batteryHealth < 50 && lastBatteryHealth >= 50) {
+                lastCriticalAlertTime = now;
+                autoAskAI('⚠️ CRITICAL: Battery health dropped below 50%. What maintenance is needed?');
+            }
+            // Check for rapid battery degradation
+            else if (lastBatteryHealth - batteryHealth > 15) {
+                lastCriticalAlertTime = now;
+                autoAskAI('⚠️ WARNING: Rapid battery degradation detected. Please advise.');
+            }
+
+            lastBatteryHealth = batteryHealth;
+        }
+
+        // LOGGING FUNCTIONS
+        function logCriticalEvent(eventData) {
+            // Log critical event to backend
+            fetch(BACKEND_URL + '/log-critical-event', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(eventData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Critical event logged:', data.file_path);
+                    if (data.uploaded_to_drive) {
+                        console.log('☁️ Uploaded to Google Drive');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('⚠️ Failed to log critical event:', error);
+            });
+        }
+
+        function logHourlySnapshot(snapshotData) {
+            // Log hourly snapshot to backend
+            fetch(BACKEND_URL + '/log-hourly-snapshot', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(snapshotData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Hourly snapshot logged:', data.file_path);
+                    if (data.uploaded_to_drive) {
+                        console.log('☁️ Uploaded to Google Drive');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('⚠️ Failed to log hourly snapshot:', error);
+            });
+        }
+
+        // PROACTIVE AI MONITORING SYSTEM
+        function proactiveAIMonitor(currentData, visionData) {
+            const now = Date.now();
+
+            // Skip if alert was sent recently
+            if (now - lastCriticalAlertTime < CRITICAL_ALERT_INTERVAL) {
+                return;
+            }
+
+            const batteryHealth = currentData.prediction.battery_health_percent;
+            const temp = currentData.measurements.temperature;
+            const voltage = currentData.measurements.voltage;
+            const current = currentData.measurements.current;
+
+            const panelHealth = visionData?.analysis?.panel_health_score || 100;
+            const dustCount = visionData?.analysis?.dust_count || 0;
+            const crackCount = visionData?.analysis?.crack_count || 0;
+            const coverCount = visionData?.analysis?.cover_count || 0;
+
+            // CRITICAL CONDITIONS (Priority 1)
+            if (batteryHealth < 20) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `🚨 EMERGENCY: Battery at ${batteryHealth.toFixed(1)}%! Immediate replacement needed. What are the risks if I continue using it?`;
+                autoAskAI(alertMessage);
+
+                // LOG CRITICAL EVENT
+                logCriticalEvent({
+                    event_type: 'BATTERY_EMERGENCY',
+                    severity: 'CRITICAL',
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count,
+                        capacity_fade: currentData.measurements.capacity_fade
+                    },
+                    panel: {
+                        health: panelHealth,
+                        dust_count: dustCount,
+                        crack_count: crackCount,
+                        cover_count: coverCount
+                    },
+                    ai_alert: alertMessage
+                });
+
+                consecutiveBadReadings++;
+                return;
+            }
+
+            if (panelHealth < 30 && (dustCount + crackCount + coverCount) > 5) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `🚨 CRITICAL: Panel health ${panelHealth}% with ${dustCount} dust, ${crackCount} cracks, ${coverCount} coverage issues detected. Detailed assessment needed!`;
+                autoAskAI(alertMessage);
+
+                // LOG CRITICAL EVENT
+                logCriticalEvent({
+                    event_type: 'PANEL_CRITICAL',
+                    severity: 'CRITICAL',
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count
+                    },
+                    panel: {
+                        health: panelHealth,
+                        dust_count: dustCount,
+                        crack_count: crackCount,
+                        cover_count: coverCount,
+                        total_anomalies: dustCount + crackCount + coverCount
+                    },
+                    ai_alert: alertMessage
+                });
+
+                consecutiveBadReadings++;
+                return;
+            }
+
+            // WARNING CONDITIONS (Priority 2)
+            if (batteryHealth < 40 && lastBatteryHealth >= 40) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `⚠️ Battery health dropped to ${batteryHealth.toFixed(1)}%. Current cycle: ${currentData.measurements.cycle_count}. What's causing this degradation?`;
+                autoAskAI(alertMessage);
+
+                // LOG WARNING EVENT
+                logCriticalEvent({
+                    event_type: 'BATTERY_WARNING',
+                    severity: 'WARNING',
+                    battery: {
+                        health: batteryHealth,
+                        previous_health: lastBatteryHealth,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count,
+                        capacity_fade: currentData.measurements.capacity_fade
+                    },
+                    panel: {
+                        health: panelHealth,
+                        dust_count: dustCount,
+                        crack_count: crackCount,
+                        cover_count: coverCount
+                    },
+                    ai_alert: alertMessage
+                });
+
+                consecutiveBadReadings++;
+                return;
+            }
+
+            // Temperature anomalies
+            if (temp > 45 || temp < 0) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `🌡️ Temperature anomaly detected: ${temp}°C! Is this affecting battery performance?`;
+                autoAskAI(alertMessage);
+
+                // LOG TEMPERATURE ANOMALY
+                logCriticalEvent({
+                    event_type: 'TEMPERATURE_ANOMALY',
+                    severity: 'WARNING',
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count,
+                        capacity_fade: currentData.measurements.capacity_fade
+                    },
+                    anomaly_details: {
+                        type: temp > 45 ? 'OVERHEAT' : 'UNDERCOOL',
+                        threshold_exceeded: temp > 45 ? `${temp}°C > 45°C` : `${temp}°C < 0°C`
+                    },
+                    ai_alert: alertMessage
+                });
+
+                return;
+            }
+
+            // Voltage anomalies
+            if (voltage < 3.3 || voltage > 4.3) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `⚡ Abnormal voltage: ${voltage.toFixed(2)}V detected. Should I be concerned?`;
+                autoAskAI(alertMessage);
+
+                // LOG VOLTAGE ANOMALY
+                logCriticalEvent({
+                    event_type: 'VOLTAGE_ANOMALY',
+                    severity: 'WARNING',
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count,
+                        capacity_fade: currentData.measurements.capacity_fade
+                    },
+                    anomaly_details: {
+                        type: voltage > 4.3 ? 'OVERVOLTAGE' : 'UNDERVOLTAGE',
+                        threshold_exceeded: voltage > 4.3 ? `${voltage.toFixed(2)}V > 4.3V` : `${voltage.toFixed(2)}V < 3.3V`,
+                        normal_range: '3.3V - 4.3V'
+                    },
+                    ai_alert: alertMessage
+                });
+
+                return;
+            }
+
+            // New panel issues detected
+            if (dustCount > lastDustCount + 2) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `🌫️ Significant dust accumulation detected (${dustCount} areas). How much efficiency am I losing? Should I clean now?`;
+                autoAskAI(alertMessage);
+
+                // LOG DUST ACCUMULATION
+                logCriticalEvent({
+                    event_type: 'DUST_ACCUMULATION',
+                    severity: 'WARNING',
+                    panel: {
+                        health: panelHealth,
+                        dust_count: dustCount,
+                        dust_increase: dustCount - lastDustCount,
+                        previous_dust_count: lastDustCount,
+                        crack_count: crackCount,
+                        cover_count: coverCount
+                    },
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        temperature: temp
+                    },
+                    ai_alert: alertMessage
+                });
+
+                lastDustCount = dustCount;
+                return;
+            }
+
+            if (crackCount > lastCrackCount) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `⚠️ New crack detected on solar panel! Total: ${crackCount}. How serious is this? Can it spread?`;
+                autoAskAI(alertMessage);
+
+                // LOG CRACK DETECTION
+                logCriticalEvent({
+                    event_type: 'CRACK_DETECTED',
+                    severity: 'WARNING',
+                    panel: {
+                        health: panelHealth,
+                        crack_count: crackCount,
+                        new_cracks: crackCount - lastCrackCount,
+                        previous_crack_count: lastCrackCount,
+                        dust_count: dustCount,
+                        cover_count: coverCount
+                    },
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        temperature: temp
+                    },
+                    ai_alert: alertMessage
+                });
+
+                lastCrackCount = crackCount;
+                return;
+            }
+
+            if (coverCount > lastCoverCount + 1) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `🍂 New obstruction detected (${coverCount} areas covered). What could be blocking the panel? Impact on power generation?`;
+                autoAskAI(alertMessage);
+
+                // LOG OBSTRUCTION DETECTION
+                logCriticalEvent({
+                    event_type: 'OBSTRUCTION_DETECTED',
+                    severity: 'WARNING',
+                    panel: {
+                        health: panelHealth,
+                        cover_count: coverCount,
+                        new_obstructions: coverCount - lastCoverCount,
+                        previous_cover_count: lastCoverCount,
+                        dust_count: dustCount,
+                        crack_count: crackCount
+                    },
+                    battery: {
+                        health: batteryHealth,
+                        voltage: voltage,
+                        temperature: temp
+                    },
+                    ai_alert: alertMessage
+                });
+
+                lastCoverCount = coverCount;
+                return;
+            }
+
+            // IMPROVEMENT TRACKING (Priority 3 - Good news!)
+            if (batteryHealth > lastBatteryHealth + 5) {
+                consecutiveGoodReadings++;
+                if (consecutiveGoodReadings >= 3 && now - lastCriticalAlertTime > GOOD_NEWS_INTERVAL) {
+                    lastCriticalAlertTime = now;
+                    autoAskAI(`✅ Great! Battery health improved to ${batteryHealth.toFixed(1)}%! What's working well in the system?`);
+                    consecutiveGoodReadings = 0;
+                    return;
+                }
+            }
+
+            if (panelHealth > 90 && (dustCount + crackCount + coverCount) === 0 && lastPanelHealth < 90) {
+                if (now - lastCriticalAlertTime > GOOD_NEWS_INTERVAL) {
+                    lastCriticalAlertTime = now;
+                    autoAskAI(`🌟 Excellent! Solar panels are in perfect condition (${panelHealth}% health). Any optimization tips?`);
+                    return;
+                }
+            }
+
+            // TREND ANALYSIS (Priority 4)
+            const batteryDrop = lastBatteryHealth - batteryHealth;
+            if (batteryDrop > 10 && batteryDrop < 20) {
+                lastCriticalAlertTime = now;
+                const alertMessage = `📉 Battery degrading faster than normal (${batteryDrop.toFixed(1)}% drop). Temperature: ${temp}°C, Cycles: ${currentData.measurements.cycle_count}. What factors are accelerating this?`;
+                autoAskAI(alertMessage);
+
+                // LOG ACCELERATED DEGRADATION
+                logCriticalEvent({
+                    event_type: 'ACCELERATED_DEGRADATION',
+                    severity: 'WARNING',
+                    battery: {
+                        health: batteryHealth,
+                        previous_health: lastBatteryHealth,
+                        health_drop: batteryDrop,
+                        voltage: voltage,
+                        current: current,
+                        temperature: temp,
+                        cycle_count: currentData.measurements.cycle_count,
+                        capacity_fade: currentData.measurements.capacity_fade
+                    },
+                    panel: {
+                        health: panelHealth,
+                        dust_count: dustCount,
+                        crack_count: crackCount,
+                        cover_count: coverCount
+                    },
+                    ai_alert: alertMessage
+                });
+
+                return;
+            }
+
+            // MAINTENANCE REMINDERS (Priority 5)
+            if (currentData.measurements.cycle_count % 100 === 0 && currentData.measurements.cycle_count > 0) {
+                lastCriticalAlertTime = now;
+                autoAskAI(`🔧 Milestone: ${currentData.measurements.cycle_count} cycles completed. Current health: ${batteryHealth.toFixed(1)}%. Maintenance recommendations?`);
+                return;
+            }
+
+            // Update tracking variables
+            lastBatteryHealth = batteryHealth;
+            lastPanelHealth = panelHealth;
+            lastTemperature = temp;
+            lastVoltage = voltage;
+            lastCurrent = current;
+            lastDustCount = dustCount;
+            lastCrackCount = crackCount;
+            lastCoverCount = coverCount;
+        }
+
+        function autoAskAI(question) {
+            // Add system alert message
+            addAIMessage(question, 'user');
+
+            // Call AI backend without disabling input
+            fetch(BACKEND_URL + '/ai-assistant', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({question: question})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    addAIMessage('🤖 ' + data.answer, 'assistant');
+                } else {
+                    addAIMessage('Error: ' + (data.error || 'Unknown error'), 'system');
+                }
+            })
+            .catch(error => {
+                console.error('Auto AI error:', error);
+            });
+        }
+
+        // IP MANAGEMENT FUNCTIONS
+        function promptForCardIP() {
+            const currentIP = CARD_IP.replace('http://', '');
+            const newIP = prompt(
+                '🌐 Enter STM32 Card IP Address:\n\n' +
+                'Check your serial monitor for the IP address.\n' +
+                'Format: 192.168.1.100 or 10.119.200.225\n\n' +
+                'Current IP: ' + currentIP,
+                currentIP
+            );
+
+            if (newIP && newIP.trim()) {
+                const cleanIP = newIP.trim();
+                // Validate IP format
+                const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+                if (ipPattern.test(cleanIP)) {
+                    setCardIP(cleanIP);
+                    return true;
+                } else {
+                    alert('❌ Invalid IP format! Please enter a valid IP address.');
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function setCardIP(ip) {
+            CARD_IP = 'http://' + ip;
+            localStorage.setItem('stm32_card_ip', CARD_IP);
+            console.log('✅ Card IP updated:', CARD_IP);
+            connectionRetries = 0;
+
+            // Show confirmation
+            const statusElement = document.getElementById('lastUpdate');
+            if (statusElement) {
+                statusElement.innerHTML = '✅ Card IP updated: ' + ip + ' - Reconnecting...';
+            }
+
+            // Retry connection immediately
+            setTimeout(() => {
+                updateData();
+            }, 500);
+        }
+
+        async function checkCardConnection() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+                const response = await fetch(CARD_IP + '/api/temperature', {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    connectionRetries = 0;
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (error) {
+                console.warn('Card connection check failed:', error.message);
+                return false;
+            }
+        }
+
+        // Intro Video Functions
+        function playIntroVideo() {
+            const introVideo = document.getElementById('introVideo');
+            const playButton = document.getElementById('playIntro');
+            const skipButton = document.getElementById('skipIntro');
+
+            // Hide play button, show skip button
+            playButton.style.display = 'none';
+            skipButton.style.display = 'block';
+
+            // Set volume and play with sound
+            introVideo.volume = 1.0;
+            introVideo.muted = false;
+
+            introVideo.play().then(() => {
+                console.log('Video playing with sound');
+            }).catch(error => {
+                console.error('Play failed:', error);
+                alert('Video playback failed. Please try refreshing the page.');
+            });
+        }
+
+        function skipIntro() {
+            const overlay = document.getElementById('introOverlay');
+            const introVideo = document.getElementById('introVideo');
+
+            overlay.classList.add('hidden');
+            introVideo.pause();
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Auto-skip intro when video ends
+        document.addEventListener('DOMContentLoaded', function() {
+            const introVideo = document.getElementById('introVideo');
+
+            if (introVideo) {
+                // Auto-skip when video ends
+                introVideo.addEventListener('ended', function() {
+                    skipIntro();
+                });
+
+                // Handle errors
+                introVideo.addEventListener('error', function(e) {
+                    console.error('Video error:', e);
+                    alert('Video failed to load. Check if intro.mp4 exists in images folder.');
+                    skipIntro();
+                });
+            }
+
+            // Allow Enter key to send AI messages
+            const aiInput = document.getElementById('aiInput');
+            if (aiInput) {
+                aiInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        askAI();
+                    }
+                });
+            }
+        });
+
+        // Initialize
+        window.onload = async function() {
+            initCanvas();
+            updateLED(100); // Initialize LED as green
+
+            // Display current IP on console
+            console.log('🌐 STM32 Card IP:', CARD_IP);
+            console.log('💾 IP stored in localStorage');
+
+            // Check connection before starting
+            const statusElement = document.getElementById('lastUpdate');
+            statusElement.innerHTML = 'Testing connection to ' + CARD_IP.replace('http://', '') + '...';
+
+            const isConnected = await checkCardConnection();
+
+            if (!isConnected) {
+                statusElement.innerHTML = '⚠️ Cannot connect - Click "Change Card IP" button';
+                statusElement.style.color = '#FFC107';
+
+                const shouldPrompt = confirm(
+                    '⚠️ Cannot connect to STM32 card!\n\n' +
+                    'Current saved IP: ' + CARD_IP.replace('http://', '') + '\n\n' +
+                    'This IP may be outdated. Check your serial monitor for the current IP.\n\n' +
+                    'Would you like to enter the new IP address now?'
+                );
+
+                if (shouldPrompt) {
+                    if (!promptForCardIP()) {
+                        alert('💡 TIP: You can update the IP anytime using the "Change Card IP" button below.');
+                    }
+                }
+            } else {
+                statusElement.innerHTML = '✅ Connected to ' + CARD_IP.replace('http://', '');
+                statusElement.style.color = '#4CAF50';
+
+                // Start data updates
+                updateData();
+                setInterval(updateData, 10000); // Battery: every 10 seconds
+                setInterval(updateVisionData, 50); // Vision: every 50ms
+
+                // Hourly snapshot logging (every 3600000ms = 1 hour)
+                setInterval(() => {
+                    if (latestBatteryData && latestVisionData) {
+                        const snapshotData = {
+                            battery: {
+                                health: latestBatteryData.prediction.battery_health_percent,
+                                voltage: latestBatteryData.measurements.voltage,
+                                current: latestBatteryData.measurements.current,
+                                temperature: latestBatteryData.measurements.temperature,
+                                cycle_count: latestBatteryData.measurements.cycle_count,
+                                capacity_fade: latestBatteryData.measurements.capacity_fade,
+                                rul_cycles: latestBatteryData.prediction.rul_cycles
+                            },
+                            panel: {
+                                health: latestVisionData.analysis?.panel_health_score || 100,
+                                dust_count: latestVisionData.analysis?.detected_anomalies?.filter(a => a.class === 'dust').length || 0,
+                                crack_count: latestVisionData.analysis?.detected_anomalies?.filter(a => a.class === 'crack').length || 0,
+                                cover_count: latestVisionData.analysis?.detected_anomalies?.filter(a => a.class === 'cover').length || 0,
+                                confidence_avg: latestVisionData.analysis?.confidence_avg || 0
+                            },
+                            statistics: {
+                                snapshot_timestamp: new Date().toISOString(),
+                                uptime_hours: Math.floor((Date.now() - performance.timing.navigationStart) / 3600000)
+                            }
+                        };
+
+                        logHourlySnapshot(snapshotData);
+                        console.log('📊 Hourly snapshot logged:', snapshotData);
+                    }
+                }, 3600000); // 1 hour = 3600000ms
+            }
+        };
+    </script>
+</body>
+</html>

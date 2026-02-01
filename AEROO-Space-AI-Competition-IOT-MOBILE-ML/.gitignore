@@ -1,0 +1,121 @@
+# Temporary files
+.tasks/
+.sessions/
+/tasks/
+/sessions/
+
+# Sensitive data - API Keys, Passwords, Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*secret*
+*password*
+*credentials*
+config.json
+secrets.json
+
+# Google Drive API credentials
+python_backend/credentials.json
+python_backend/token.pickle
+
+# Log files
+python_backend/logs/
+python_backend/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# Note: Not ignoring lib/ globally to allow Flutter lib/ directory
+# Python lib/ directories are handled by build/ and dist/ patterns
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Project specific
+python_backend/server.log
+python_backend/nul
+nul
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# STM32 Build files
+STM32CubeIDE/Debug/
+STM32CubeIDE/Release/
+*.o
+*.d
+*.su
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.cyclo
+
+# Flutter/Dart
+aeroo_monitor/build/
+aeroo_monitor/.dart_tool/
+aeroo_monitor/.flutter-plugins
+aeroo_monitor/.flutter-plugins-dependencies
+aeroo_monitor/.packages
+aeroo_monitor/.pub-cache/
+aeroo_monitor/.pub/
+aeroo_monitor/devtools_options.yaml
+aeroo_monitor/android/.gradle/
+aeroo_monitor/android/app/build/
+aeroo_monitor/android/captures/
+aeroo_monitor/android/local.properties
+aeroo_monitor/ios/Flutter/flutter_export_environment.sh
+aeroo_monitor/ios/Flutter/Flutter.framework
+aeroo_monitor/ios/Flutter/Flutter.podspec
+aeroo_monitor/ios/Pods/
+aeroo_monitor/ios/.symlinks/
+aeroo_monitor/ios/Flutter/App.framework
+aeroo_monitor/ios/Flutter/Generated.xcconfig
+aeroo_monitor/ios/Runner/GeneratedPluginRegistrant.*
+
+# APK files (too large for git)
+*.apk
+*.aab
+*.ipa
+
+# Android Studio
+aeroo_monitor/android/.idea/
+aeroo_monitor/.idea/
+aeroo_monitor/local.properties
