@@ -1,0 +1,124 @@
+# Build outputs
+build/
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.d
+*.su
+*.lst
+
+# IDE specific files
+.metadata/
+.settings/
+*.launch
+Debug/
+Release/
+
+# Compiler files
+*.exe
+*.out
+*.app
+
+# OS specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Log files
+*.log
+
+# Python cache (if any Python scripts are used)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# System files
+*.stackdump
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# ==============================================
+# IMPORTANT: Exclude ALL Claude-related files
+# ==============================================
+
+# Claude Code chat history and session data
+.claude/
+.claude_code/
+*.claude
+*.claude_history
+claude_history/
+.claude_sessions/
+
+# Claude configuration files
+.claude.json
+.clauderc
+claude.config
+claude_config.*
+
+# Claude cache and temporary files
+.cache/claude/
+.tmp/claude/
+claude_cache/
+claude_temp/
+
+# Claude logs and debug files
+claude*.log
+claude_debug.*
+claude_trace.*
+
+# Claude workspace and project files
+.claude_workspace/
+.claude_project/
+claude_workspace.*
+
+# Claude AI-related metadata
+.ai_metadata/
+ai_generated.*
+claude_meta.*
+
+# Any file or folder containing "claude" in name (case insensitive)
+*[Cc][Ll][Aa][Uu][Dd][Ee]*
+
+# Exclude any potential Claude backup or autosave files
+*claude*~
+*claude*.bak
+*claude*.backup
+
+# Exclude Claude-related directories
+**/claude/
+**/Claude/
+**/.claude/

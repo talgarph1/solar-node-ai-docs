@@ -1,0 +1,5 @@
+python -u -c "import socket,datetime; path=r'C:\Users\Suleyman\Desktop\STM32 training\STM32N6-GettingStarted-ObjectDetection-main\udp_log.txt'; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.bind(('0.0.0.0',5000)); print('listening ->', path); 
+while True:
+ data,_=s.recvfrom(4096); msg=data.decode('ascii','ignore').strip();
+ ts=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S');
+ with open(path,'a',encoding='utf-8') as f: f.write(f'{ts} {msg}\n')"
